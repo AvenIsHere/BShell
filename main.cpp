@@ -16,11 +16,11 @@
 #include "config.h"
 
 #ifndef HOST_NAME_MAX
-  #if defined(_POSIX_HOST_NAME_MAX)
-    #define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
-  #else
-    #define HOST_NAME_MAX 255
-  #endif
+#if defined(_POSIX_HOST_NAME_MAX)
+#define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+#else
+#define HOST_NAME_MAX 255
+#endif
 #endif
 
 
@@ -50,22 +50,22 @@ void execute_command(const std::vector<std::string> &args) {
     }
 }
 
-std::vector<std::string> split_string(const std::string &givenString, const std::string &delim) {
-    std::vector<std::string> returnVector;
+std::vector<std::string> split_string(const std::string &given_string, const std::string &delim) {
+    std::vector<std::string> return_vector;
     size_t start = 0;
-    size_t end = givenString.find(delim);
+    size_t end = given_string.find(delim);
     while (end != std::string::npos) {
-        returnVector.push_back(givenString.substr(start, end - start));
+        return_vector.push_back(given_string.substr(start, end - start));
         start = end + delim.length();
-        end = givenString.find(delim, start);
+        end = given_string.find(delim, start);
     }
-    returnVector.push_back(givenString.substr(start));
-    return returnVector;
+    return_vector.push_back(given_string.substr(start));
+    return return_vector;
 }
 
-std::vector<std::string> split_whitespace(const std::string &givenString) {
+std::vector<std::string> split_whitespace(const std::string &given_string) {
     std::vector<std::string> returnVector;
-    std::stringstream ss(givenString);
+    std::stringstream ss(given_string);
     std::string word;
     while (ss >> word) {
         returnVector.push_back(word);
@@ -75,41 +75,41 @@ std::vector<std::string> split_whitespace(const std::string &givenString) {
 
 void handle_commands(const char *currentCMD, Config *config) {
     for (const std::vector<std::string> commands = split_string(currentCMD, ";"); const auto &command: commands) {
-        std::vector<std::string> splitCommand = split_whitespace(command);
+        std::vector<std::string> split_command = split_whitespace(command);
 
-        if (splitCommand.empty()) {
+        if (split_command.empty()) {
             continue;
         }
 
-        if (splitCommand[0] == "cd") {
-            config->cd(splitCommand);
-        } else if (splitCommand[0] == "exit") {
+        if (split_command[0] == "cd") {
+            config->cd(split_command);
+        } else if (split_command[0] == "exit") {
             exit(EXIT_SUCCESS);
         } else {
-            execute_command(splitCommand);
+            execute_command(split_command);
         }
     }
 }
 
 char *get_input(const Config *config) {
     std::string prompt;
-    if (config->get_home_path() != nullptr && config->get_current_directory().starts_with(config->get_home_path())) {
+    if (config->get_home_path().c_str() != nullptr && config->get_current_directory().starts_with(config->get_home_path())) {
         prompt = std::format("{}@{}:~{}$ ", config->get_username(), config->get_hostname(),
-                             config->get_current_directory().c_str() + strlen(config->get_home_path()));
+                             config->get_current_directory().c_str() + strlen(config->get_home_path().c_str()));
     } else {
         prompt = std::format("{}@{}:{}$ ", config->get_username(), config->get_hostname(),
                              config->get_current_directory());
     }
-    char *currentCMD = readline(prompt.c_str());
+    char *current_cmd = readline(prompt.c_str());
 
-    if (currentCMD == nullptr) {
+    if (current_cmd == nullptr) {
         return nullptr;
     }
 
-    if (*currentCMD) {
-        add_history(currentCMD);
+    if (*current_cmd) {
+        add_history(current_cmd);
     }
-    return currentCMD;
+    return current_cmd;
 }
 
 int main(int argc, char *argv[]) {
@@ -118,16 +118,16 @@ int main(int argc, char *argv[]) {
     while (true) {
         // keep the shell running until the exit command is entered
 
-        char *currentCMD = get_input(&config);
+        char *current_cmd = get_input(&config);
 
-        if (currentCMD == nullptr) {
+        if (current_cmd == nullptr) {
             std::cout << std::endl;
             break;
         }
 
-        handle_commands(currentCMD, &config);
+        handle_commands(current_cmd, &config);
 
-        free(currentCMD);
+        free(current_cmd);
     }
 
     return 0;

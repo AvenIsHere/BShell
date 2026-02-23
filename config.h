@@ -10,16 +10,16 @@
 
 class Config {
 public:
-    void set_current_directory(const std::string &current_directory) {
-        currentDirectory = current_directory;
+    void set_current_directory(const std::string &given_current_directory) {
+        this->current_directory = given_current_directory;
     }
 
     [[nodiscard]] std::string get_home_path() const {
-        return homePath;
+        return home_path;
     }
 
     [[nodiscard]] std::string get_current_directory() const {
-        return currentDirectory;
+        return current_directory;
     }
 
     [[nodiscard]] std::string get_username() const {
@@ -31,15 +31,15 @@ public:
     }
 
     [[nodiscard]] std::string get_pipe_delim() const {
-        return pipeDelim;
+        return pipe_delim;
     }
 
 private:
-    std::string homePath;
-    std::string currentDirectory;
+    std::string home_path;
+    std::string current_directory;
     std::string username;
     std::string hostname;
-    std::string pipeDelim;
+    std::string pipe_delim;
 
 public:
     Config();

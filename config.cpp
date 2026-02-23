@@ -21,14 +21,14 @@
 
 Config::Config() {
     const char* homePathTemp = getenv("HOME");
-    this->homePath = homePathTemp;
+    this->home_path = homePathTemp;
 
     char currentDirectoryTemp[PATH_MAX];
     if (getcwd(currentDirectoryTemp, PATH_MAX) == nullptr) {
         perror("Could not find current directory");
         exit(1);
     }
-    this->currentDirectory = currentDirectoryTemp;
+    this->current_directory = currentDirectoryTemp;
 
     const char *usernameTemp = getenv("USER");
     std::string username;
@@ -46,7 +46,7 @@ Config::Config() {
     } else {
         pipeDelim = pipeDelimTemp;
     }
-    this->pipeDelim = pipeDelim;
+    this->pipe_delim = pipeDelim;
 
     signal(SIGINT, SIG_IGN);
 
@@ -58,16 +58,16 @@ Config::Config() {
 
 void Config::cd(const std::vector<std::string> &givenCommand) {
     if (givenCommand.size() < 2) {
-        if (homePath.c_str() != nullptr) {
-            chdir(homePath.c_str());
+        if (home_path.c_str() != nullptr) {
+            chdir(home_path.c_str());
         }
     } else if (givenCommand.size() > 2) {
         std::cerr << "Too many arguments." << std::endl;
     } else {
         errno = 0;
         std::string dir;
-        if (givenCommand[1][0] == '~' && homePath.c_str() != nullptr) {
-            dir = std::format("{}{}", homePath, givenCommand[1].c_str() + 1);
+        if (givenCommand[1][0] == '~' && home_path.c_str() != nullptr) {
+            dir = std::format("{}{}", home_path, givenCommand[1].c_str() + 1);
         } else {
             dir = givenCommand[1];
         }
@@ -77,5 +77,5 @@ void Config::cd(const std::vector<std::string> &givenCommand) {
     }
     char cwdTemp[PATH_MAX];
     getcwd(cwdTemp, PATH_MAX);
-    currentDirectory = cwdTemp;
+    current_directory = cwdTemp;
 }
