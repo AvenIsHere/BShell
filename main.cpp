@@ -20,18 +20,6 @@
   #endif
 #endif
 
-char** vector_to_c(const std::vector<std::string>& givenVector) {
-    const auto returnList = static_cast<char**>(malloc(sizeof(char*)*(givenVector.size()+1)));
-
-    for (int i = 0; i < givenVector.size(); i++) {
-        returnList[i] = static_cast<char*>(malloc(givenVector[i].length() + 1));
-        strcpy(returnList[i], givenVector[i].data());
-    }
-    returnList[givenVector.size()] = nullptr;
-
-    return returnList;
-}
-
 
 void execute_command(const std::vector<std::string> &args) {
     const pid_t process = fork();
@@ -41,7 +29,14 @@ void execute_command(const std::vector<std::string> &args) {
     }
     if (process == 0) {
         signal(SIGINT, SIG_DFL);
-        execvp(args[0].c_str(), vector_to_c(args));
+
+        std::vector<char*> argsToPass;
+        for (int i = 0; i < args.size(); i++) {
+            argsToPass.push_back(const_cast<std::vector<char *>::value_type>(args[i].data()));
+        }
+        argsToPass.push_back(nullptr);
+
+        execvp(args[0].c_str(), argsToPass.data());
         perror("Command execution failed");
         _exit(1);
     }
@@ -50,16 +45,6 @@ void execute_command(const std::vector<std::string> &args) {
     if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
         fprintf(stderr, "Process failed with error code %i.\n", WEXITSTATUS(status));
     }
-}
-
-bool starts_with(const std::string& string, const std::string& prefix) {
-    if (prefix.empty()) {
-        return true;
-    }
-    if (prefix.size() > string.size()) {
-        return false;
-    }
-    return strncmp(string.c_str(), prefix.c_str(), prefix.size()) == 0;
 }
 
 typedef struct config {
@@ -73,13 +58,12 @@ typedef struct config {
 Config init() {
     const char* homePath = getenv("HOME");
 
-    std::string currentDirectory(PATH_MAX, '\0');
-    auto currentDirectoryTemp = static_cast<char*>(malloc(PATH_MAX));
+    char currentDirectoryTemp[PATH_MAX];
     if (getcwd(currentDirectoryTemp, PATH_MAX) == nullptr) {
         perror("Could not find current directory");
         exit(1);
     }
-    currentDirectory = currentDirectoryTemp;
+    std::string currentDirectory = currentDirectoryTemp;
 
     const char* usernameTemp = getenv("USER");
     std::string username;
@@ -136,7 +120,7 @@ void cd(const std::vector<std::string>& givenCommand, Config* config) {
     config->currentDirectory = cwdTemp;
 }
 
-std::vector<std::string> split_string(std::string givenString, std::string delim) {
+std::vector<std::string> split_string(const std::string& givenString, const std::string& delim) {
     std::vector<std::string> returnVector;
     size_t start = 0;
     size_t end = givenString.find(delim);
@@ -149,7 +133,7 @@ std::vector<std::string> split_string(std::string givenString, std::string delim
     return returnVector;
 }
 
-std::vector<std::string> split_whitespace(std::string givenString) {
+std::vector<std::string> split_whitespace(const std::string& givenString) {
     std::vector<std::string> returnVector;
     std::stringstream ss(givenString);
     std::string word;
@@ -159,10 +143,9 @@ std::vector<std::string> split_whitespace(std::string givenString) {
     return returnVector;
 }
 
-void handle_commands(char *currentCMD, Config *config) {
-    const std::vector<std::string> commands = split_string(currentCMD, ";");
-    for (int k = 0; k < commands.size(); k++) {
-        std::vector<std::string> splitCommand = split_whitespace(commands[k]);
+void handle_commands(const char *currentCMD, Config *config) {
+    for (const std::vector<std::string> commands = split_string(currentCMD, ";"); const auto & command : commands) {
+        std::vector<std::string> splitCommand = split_whitespace(command);
 
         if (splitCommand.empty()) {
             continue;
@@ -182,7 +165,7 @@ void handle_commands(char *currentCMD, Config *config) {
 
 char* get_input(const Config *config) {
     std::string prompt;
-    if (config->homePath != nullptr && starts_with(config->currentDirectory, config->homePath)) {
+    if (config->homePath != nullptr && config->currentDirectory.starts_with(config->homePath)) {
         prompt = std::format("{}@{}:~{}$ ", config->username, config->hostname, config->currentDirectory.c_str() + strlen(config->homePath));
     }
     else {
