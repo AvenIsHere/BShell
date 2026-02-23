@@ -1,6 +1,6 @@
 ## BasicShell
 
-This is a shell program written in C for POSIX-compliant operating systems.
+This is a shell program written in C++ for POSIX-compliant operating systems.
 
 This was initially made as coursework for university, however, I have since developed it considerably.
 
