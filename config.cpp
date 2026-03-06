@@ -20,8 +20,9 @@
 #endif
 
 Config::Config() {
-    const char* homePathTemp = getenv("HOME");
+    char* homePathTemp = getenv("HOME");
     this->home_path = homePathTemp;
+    free(homePathTemp);
 
     char currentDirectoryTemp[PATH_MAX];
     if (getcwd(currentDirectoryTemp, PATH_MAX) == nullptr) {
@@ -30,7 +31,7 @@ Config::Config() {
     }
     this->current_directory = currentDirectoryTemp;
 
-    const char *usernameTemp = getenv("USER");
+    char* usernameTemp = getenv("USER");
     std::string usernameStr;
     if (usernameTemp == nullptr) {
         usernameStr = "unknown";
@@ -38,8 +39,9 @@ Config::Config() {
         usernameStr = usernameTemp;
     }
     this->username = usernameStr;
+    free(usernameTemp);
 
-    const char *pipeDelimTemp = getenv("PIPE_DELIM");
+    char* pipeDelimTemp = getenv("PIPE_DELIM");
     std::string pipeDelim;
     if (pipeDelimTemp == nullptr) {
         pipeDelim = "|";
@@ -47,6 +49,7 @@ Config::Config() {
         pipeDelim = pipeDelimTemp;
     }
     this->pipe_delim = pipeDelim;
+    free(pipeDelimTemp);
 
     signal(SIGINT, SIG_IGN);
 
