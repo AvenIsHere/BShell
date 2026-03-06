@@ -10,6 +10,7 @@
 #include <sstream>
 #include <format>
 #include <iostream>
+#include <memory>
 
 #include "config.h"
 
@@ -71,8 +72,8 @@ std::vector<std::string> split_whitespace(const std::string &given_string) {
     return returnVector;
 }
 
-bool handle_commands(const char *currentCMD, Config *config) {
-    for (const std::vector<std::string> commands = split_string(currentCMD, ";"); const auto &command: commands) {
+bool handle_commands(std::unique_ptr<char, void(*)(void*)> currentCMD, Config *config) {
+    for (const std::vector<std::string> commands = split_string(currentCMD.get(), ";"); const auto &command: commands) {
         std::vector<std::string> split_command = split_whitespace(command);
 
         if (split_command.empty()) {
@@ -90,7 +91,7 @@ bool handle_commands(const char *currentCMD, Config *config) {
     return false;
 }
 
-char *get_input(const Config *config) {
+std::unique_ptr<char, void(*)(void*)> get_input(const Config *config) {
     std::string prompt;
     const std::string home_path = config->get_home_path();
     std::string current_dir = config->get_current_directory();
@@ -101,14 +102,14 @@ char *get_input(const Config *config) {
         prompt = std::format("{}@{}:{}$ ", config->get_username(), config->get_hostname(),
                              current_dir);
     }
-    char *current_cmd = readline(prompt.c_str());
+    std::unique_ptr<char, void(*)(void*)> current_cmd(readline(prompt.c_str()), std::free);
 
     if (current_cmd == nullptr) {
-        return nullptr;
+        return {std::unique_ptr<char, void(*)(void*)>(nullptr, free)};
     }
 
     if (*current_cmd) {
-        add_history(current_cmd);
+        add_history(current_cmd.get());
         stifle_history(1000);
     }
     return current_cmd;
@@ -120,19 +121,16 @@ int main(int argc, char *argv[]) {
     while (true) {
         // keep the shell running until the exit command is entered
 
-        char *current_cmd = get_input(&config);
+        std::unique_ptr<char, void(*)(void*)> current_cmd = get_input(&config);
 
         if (current_cmd == nullptr) {
             std::cout << std::endl;
             break;
         }
 
-        if (handle_commands(current_cmd, &config)) {
-            free(current_cmd);
+        if (handle_commands(std::move(current_cmd), &config)) {
             break;
         }
-
-        free(current_cmd);
     }
 
     return 0;
