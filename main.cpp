@@ -11,6 +11,7 @@
 #include <format>
 #include <iostream>
 #include <memory>
+#include <algorithm>
 
 #include "config.h"
 #include "parser.h"
