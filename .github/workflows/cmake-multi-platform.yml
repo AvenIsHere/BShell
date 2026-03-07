@@ -42,6 +42,7 @@ jobs:
           sudo apt-get install -y libreadline-dev gcc-13 g++-13 clang-17
         elif [ "$RUNNER_OS" == "macOS" ]; then
           brew install readline
+          -I$(brew --prefix readline)/include -L$(brew --prefix readline)/lib
         fi
 
     - name: Configure CMake
