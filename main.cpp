@@ -70,6 +70,7 @@ std::vector<std::string> split_whitespace(const std::string &given_string) {
 }
 
 bool handle_commands(std::unique_ptr<char, void(*)(void*)> currentCMD, Config *config) {
+    if (!currentCMD) return false;
     for (const std::vector<std::string> commands = split_string(currentCMD.get(), ";"); const auto &command: commands) {
         std::vector<std::string> split_command = split_whitespace(command);
 
@@ -102,7 +103,7 @@ std::unique_ptr<char, void(*)(void*)> get_input(const Config *config) {
     std::unique_ptr<char, void(*)(void*)> current_cmd(readline(prompt.c_str()), std::free);
 
     if (current_cmd == nullptr) {
-        return {nullptr, std::free};
+        return current_cmd;
     }
 
     if (*current_cmd) {
