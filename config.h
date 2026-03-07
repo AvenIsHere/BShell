@@ -5,10 +5,19 @@
 #ifndef BSHELL_CONFIG_H
 #define BSHELL_CONFIG_H
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 
 class Config {
+private:
+    std::string home_path;
+    std::string current_directory;
+    std::string username;
+    std::string hostname;
+    std::string pipe_delim;
+    std::unordered_set<std::string> commands;
+
 public:
     void set_current_directory(const std::string &given_current_directory) {
         this->current_directory = given_current_directory;
@@ -34,16 +43,13 @@ public:
         return pipe_delim;
     }
 
-private:
-    std::string home_path;
-    std::string current_directory;
-    std::string username;
-    std::string hostname;
-    std::string pipe_delim;
+    [[nodiscard]] std::unordered_set<std::string> get_commands() const {
+        return commands;
+    }
 
-public:
     Config();
 
+    void build_commands();
     void cd(const std::vector<std::string> &givenCommand);
 };
 

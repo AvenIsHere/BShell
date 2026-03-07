@@ -23,6 +23,7 @@
 #endif
 #endif
 
+Config config{};
 
 void execute_command(const std::vector<std::string> &args) {
     const pid_t process = fork();
@@ -99,7 +100,7 @@ std::vector<std::string> split_to_args(const std::string& command) {
     return args;
 }
 
-bool handle_commands(std::unique_ptr<char, void(*)(void*)> currentCMD, Config *config) {
+bool handle_commands(const std::unique_ptr<char, void(*)(void*)> &currentCMD) {
     if (!currentCMD) return false;
     for (const std::vector<std::string> commands = tokenise(currentCMD.get(), ';'); const auto &command: commands) {
         std::vector<std::string> split_command = split_to_args(command);
@@ -109,7 +110,7 @@ bool handle_commands(std::unique_ptr<char, void(*)(void*)> currentCMD, Config *c
         }
 
         if (split_command[0] == "cd") {
-            config->cd(split_command);
+            config.cd(split_command);
         } else if (split_command[0] == "exit") {
             return true;
         } else {
@@ -119,15 +120,44 @@ bool handle_commands(std::unique_ptr<char, void(*)(void*)> currentCMD, Config *c
     return false;
 }
 
-std::unique_ptr<char, void(*)(void*)> get_input(const Config *config) {
+char* command_generator(const char* text, const int state) {
+    static std::vector<std::string> matches;
+    static size_t match_index;
+
+    if (state == 0) {
+        matches.clear();
+        match_index = 0;
+        const std::string prefix(text);
+
+        for (const auto& cmd : config.get_commands()) {
+            if (cmd.size() >= prefix.size() && cmd.compare(0, prefix.size(), prefix) == 0) {
+                matches.push_back(cmd);
+            }
+        }
+        std::sort(matches.begin(), matches.end());
+    }
+    if (match_index < matches.size()) {
+        return strdup(matches[match_index++].c_str());
+    }
+    return nullptr;
+}
+
+char** complete(const char* text, const int start, int end) {
+    if (start == 0) {
+        return rl_completion_matches(text, command_generator);
+    }
+    return nullptr;
+}
+
+std::unique_ptr<char, void(*)(void*)> get_input() {
     std::string prompt;
-    const std::string home_path = config->get_home_path();
-    std::string current_dir = config->get_current_directory();
+    const std::string home_path = config.get_home_path();
+    std::string current_dir = config.get_current_directory();
     if (!home_path.empty() && current_dir.starts_with(home_path)) {
-        prompt = std::format("{}@{}:~{}$ ", config->get_username(), config->get_hostname(),
+        prompt = std::format("{}@{}:~{}$ ", config.get_username(), config.get_hostname(),
                              current_dir.c_str() + home_path.length());
     } else {
-        prompt = std::format("{}@{}:{}$ ", config->get_username(), config->get_hostname(),
+        prompt = std::format("{}@{}:{}$ ", config.get_username(), config.get_hostname(),
                              current_dir);
     }
     std::unique_ptr<char, void(*)(void*)> current_cmd(readline(prompt.c_str()), std::free);
@@ -144,22 +174,22 @@ std::unique_ptr<char, void(*)(void*)> get_input(const Config *config) {
 }
 
 int main(int argc, char *argv[]) {
-    Config config{};
     rl_basic_word_break_characters = " \t\n\"\\'`@$><=;|&{(";
     rl_completer_quote_characters = "\"\'";
     rl_filename_quote_characters = " \t\n\\\"'@<>=|&()";
+    rl_attempted_completion_function = complete;
 
     while (true) {
         // keep the shell running until the exit command is entered
 
-        std::unique_ptr<char, void(*)(void*)> current_cmd = get_input(&config);
+        std::unique_ptr<char, void(*)(void*)> current_cmd = get_input();
 
         if (current_cmd == nullptr) {
             std::cout << std::endl;
             break;
         }
 
-        if (handle_commands(std::move(current_cmd), &config)) {
+        if (handle_commands(current_cmd)) {
             break;
         }
     }

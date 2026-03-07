@@ -8,8 +8,10 @@
 #include <unistd.h>
 #include <vector>
 #include <climits>
+#include <filesystem>
 #include <format>
 #include <iostream>
+#include <sstream>
 
 #ifndef HOST_NAME_MAX
   #if defined(_POSIX_HOST_NAME_MAX)
@@ -54,6 +56,8 @@ Config::Config() {
     gethostname(hostnameTemp, HOST_NAME_MAX);
     const std::string hostnameStr = hostnameTemp;
     this->hostname = hostnameStr;
+
+    build_commands();
 }
 
 void Config::cd(const std::vector<std::string> &givenCommand) {
@@ -78,4 +82,27 @@ void Config::cd(const std::vector<std::string> &givenCommand) {
     char cwdTemp[PATH_MAX];
     getcwd(cwdTemp, PATH_MAX);
     current_directory = cwdTemp;
+
+    build_commands();
+}
+
+void Config::build_commands() {
+    commands.clear();
+    const char* path_env = getenv("PATH");
+    if (!path_env) return;
+
+    std::stringstream ss(path_env);
+    std::string dir_path;
+    while (std::getline(ss, dir_path, ':')) {
+        try {
+            if (!std::filesystem::exists(dir_path) || !std::filesystem::is_directory(dir_path)) continue;
+            for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
+                if (entry.is_regular_file()) {
+                    if (auto status = entry.status(); (status.permissions() & std::filesystem::perms::owner_exec) != std::filesystem::perms::none) {
+                        commands.insert(entry.path().filename().string());
+                    }
+                }
+            }
+        } catch (const std::filesystem::filesystem_error&) {}
+    }
 }
