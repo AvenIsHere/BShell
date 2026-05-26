@@ -4,6 +4,22 @@
 
 A lightweight shell written in C++20 for POSIX-compliant operating systems.
 
+## Features
+
+- GNU Readline integration
+  - Full command history support
+  - Tab completion
+- Custom-made command parsing
+  - Supports escape characters
+  - Supports quotes, single (`'`) and double (`"`)
+  - Supports environment variables
+
+### Planned features
+
+- Piping (`|`)
+- Redirection (`>`)
+- Background execution (`&`)
+
 ### Compatibility & Issues
 
 This program is known to compile on Linux and macOS; however, it has only been tested on Linux. 
