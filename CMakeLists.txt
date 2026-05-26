@@ -11,6 +11,8 @@ add_executable(BShell main.cpp
         config.h
         parser.cpp
         parser.h
+        Shell.cpp
+        Shell.h
 )
 
 target_include_directories(BShell PRIVATE ${READLINE_INCLUDE_DIR})
