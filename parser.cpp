@@ -23,121 +23,157 @@ Parser::Parser(const std::string& input) {
     this->state = NORMAL;
 }
 
+bool Parser::normal_token(const char token) {
+    if (token == '\\') {
+        state = ESCAPE;
+        stack.push(NORMAL);
+        return false;
+    }
+    if (token == '"') {
+        state = QUOTE;
+        stack.push(NORMAL);
+        return false;
+    }
+    if (token == '$') {
+        state = ENV_VAR;
+        stack.push(NORMAL);
+        return false;
+    }
+    if (token == ' ') {
+        if (!current_token.empty()) {
+            current_cmd.push_back(current_token);
+            current_token.clear();
+        }
+        return false;
+    }
+    if (token == '\'') {
+        state = SINGLE_QUOTE;
+        stack.push(NORMAL);
+        return false;
+    }
+    if (token == ';' || token == '\n') {
+        if (!current_token.empty()) {
+            current_cmd.push_back(current_token);
+            current_token.clear();
+        }
+        if (!current_cmd.empty()) {
+            return true;
+        }
+        return false;
+    }
+    current_token += token;
+    return false;
+}
+
+bool Parser::quote_token(const char token) {
+    if (token == '"') {
+        state = stack.top();
+        stack.pop();
+        return false;
+    }
+    if (token == '\\') {
+        state = ESCAPE;
+        stack.push(QUOTE);
+        return false;
+    }
+    if (token == '$') {
+        state = ENV_VAR;
+        stack.push(QUOTE);
+        return false;
+    }
+    current_token += token;
+    return false;
+}
+
+bool Parser::escape_token(const char token) {
+    if (stack.top() != QUOTE) {
+        if (token != '\n') {
+            current_token += token;
+        }
+        state = stack.top();
+        stack.pop();
+        return false;
+    }
+    if (token == '$' || token == '`' || token == '"' || token == '\\') {
+        current_token += token;
+        state = stack.top();
+        stack.pop();
+        return false;
+    }
+    current_token += '\\';
+    current_token += token;
+    state = stack.top();
+    stack.pop();
+    return false;
+}
+
+bool Parser::env_var_token(const char token) {
+    if (std::isalnum(token) || token == '_') {
+        env_str += token;
+        return false;
+    }
+    if (env_str.empty()) {
+        current_token.push_back('$');
+    }
+    else if (const char* env = getenv(env_str.c_str())) {
+        current_token.append(env);
+    }
+    env_str.clear();
+    state = stack.top();
+    stack.pop();
+    return true;
+}
+
+bool Parser::single_quote_token(const char token) {
+    if (token == '\'') {
+        state = stack.top();
+        stack.pop();
+        return false;
+    }
+    current_token += token;
+    return false;
+}
+
 std::vector<std::vector<std::string>> Parser::tokenise() {
     std::vector<std::vector<std::string>> return_vector;
-    std::vector<std::string> current_cmd;
-    std::string current_token;
-    std::string env_str;
+    current_token.clear();
+    current_cmd.clear();
+    env_str.clear();
     for (int i = 0; i < input.length(); i++) {
         const char& c = input[i];
         switch (state) {
             case NORMAL: {
-                if (c == '\\') {
-                    state = ESCAPE;
-                    stack.push(NORMAL);
-                    continue;
+                if (normal_token(c)) {
+                    return_vector.push_back(current_cmd);
+                    current_cmd.clear();
                 }
-                if (c == '"') {
-                    state = QUOTE;
-                    stack.push(NORMAL);
-                    continue;
-                }
-                if (c == '$') {
-                    state = ENV_VAR;
-                    stack.push(NORMAL);
-                    continue;
-                }
-                if (c == ' ') {
-                    if (!current_token.empty()) {
-                        current_cmd.push_back(current_token);
-                        current_token.clear();
-                    }
-                    continue;
-                }
-                if (c == '\'') {
-                    state = SINGLE_QUOTE;
-                    stack.push(NORMAL);
-                    continue;
-                }
-                if (c == ';' || c == '\n') {
-                    if (!current_token.empty()) {
-                        current_cmd.push_back(current_token);
-                        current_token.clear();
-                    }
-                    if (!current_cmd.empty()) {
-                        return_vector.push_back(current_cmd);
-                        current_cmd.clear();
-                    }
-                    continue;
-                }
-                current_token += c;
                 continue;
             }
             case QUOTE: {
-                if (c == '"') {
-                    state = stack.top();
-                    stack.pop();
-                    continue;
+                if (quote_token(c)) {
+                    return_vector.push_back(current_cmd);
+                    current_cmd.clear();
                 }
-                if (c == '\\') {
-                    state = ESCAPE;
-                    stack.push(QUOTE);
-                    continue;
-                }
-                if (c == '$') {
-                    state = ENV_VAR;
-                    stack.push(QUOTE);
-                    continue;
-                }
-                current_token += c;
                 continue;
             }
             case ESCAPE: {
-                if (stack.top() != QUOTE) {
-                    if (c != '\n') {
-                        current_token += c;
-                    }
-                    state = stack.top();
-                    stack.pop();
-                    continue;
+                if (escape_token(c)) {
+                    return_vector.push_back(current_cmd);
+                    current_cmd.clear();
                 }
-                if (c == '$' || c == '`' || c == '"' || c == '\\') {
-                    current_token +=c;
-                    state = stack.top();
-                    stack.pop();
-                    continue;
-                }
-                current_token += '\\';
-                current_token += c;
-                state = stack.top();
-                stack.pop();
                 continue;
             }
             case ENV_VAR: {
-                if (std::isalnum(c) || c == '_') {
-                    env_str += c;
-                    continue;
+                if (env_var_token(c)) {
+                    i--;
                 }
-                if (env_str.empty()) {
-                    current_token.push_back('$');
-                }
-                else if (const char* env = getenv(env_str.c_str())) {
-                    current_token.append(env);
-                }
-                env_str.clear();
-                state = stack.top();
-                stack.pop();
-                i--;
                 continue;
             }
             case SINGLE_QUOTE: {
-                if (c == '\'') {
-                    state = stack.top();
-                    stack.pop();
-                    continue;
+                if (single_quote_token(c)) {
+                    return_vector.push_back(current_cmd);
+                    current_cmd.clear();
                 }
-                current_token += c;
-                continue;
             }
         }
     }

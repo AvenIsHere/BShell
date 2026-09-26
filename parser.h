@@ -16,6 +16,7 @@
 
 #ifndef BSHELL_PARSER_H
 #define BSHELL_PARSER_H
+#include <optional>
 #include <stack>
 #include <string>
 #include <vector>
@@ -32,10 +33,19 @@ class Parser {
     State state;
     std::stack<State> stack;
     std::string input;
+    std::string current_token;
+    std::vector<std::string> current_cmd;
+    std::string env_str;
 
 public:
     explicit Parser(const std::string& input);
     std::vector<std::vector<std::string>> tokenise();
+
+    bool normal_token(char token);
+    bool quote_token(char token);
+    bool escape_token(char token);
+    bool env_var_token(char token);
+    bool single_quote_token(char token);
 };
 
 
