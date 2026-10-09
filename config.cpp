@@ -57,29 +57,16 @@ void Config::init() {
     current_directory = current_directory_temp;
 
     const char* username_temp = getenv("USER");
-    std::string username_str;
-    if (username_temp == nullptr) {
-        username_str = "unknown";
-    } else {
-        username_str = username_temp;
-    }
-    username = username_str;
+    username = username_temp == nullptr ? "unknown" : username_temp;
 
     const char* pipe_delim_temp = getenv("PIPE_DELIM");
-    std::string pipe_delim_str;
-    if (pipe_delim_temp == nullptr) {
-        pipe_delim_str = "|";
-    } else {
-        pipe_delim_str = pipe_delim_temp;
-    }
-    pipe_delim = pipe_delim_str;
+    pipe_delim = pipe_delim_temp == nullptr ? "|" : pipe_delim_temp;
 
     signal(SIGINT, SIG_IGN);
 
     char hostname_temp[HOST_NAME_MAX];
     gethostname(hostname_temp, HOST_NAME_MAX);
-    const std::string hostname_str = hostname_temp;
-    hostname = hostname_str;
+    hostname = hostname_temp;
 
     build_commands();
 }
@@ -141,12 +128,15 @@ void Config::build_commands() {
         try {
             if (!std::filesystem::exists(dir_path) || !std::filesystem::is_directory(dir_path)) continue;
             for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
-                if (entry.is_regular_file()) {
-                    if (auto status = entry.status(); (status.permissions() & std::filesystem::perms::owner_exec) != std::filesystem::perms::none) {
-                        commands.insert(entry.path().filename().string());
-                    }
+                if (!entry.is_regular_file()) {
+                    continue;
+                }
+                if (auto status = entry.status(); (status.permissions() & std::filesystem::perms::owner_exec) != std::filesystem::perms::none) {
+                    commands.insert(entry.path().filename().string());
                 }
             }
-        } catch (const std::filesystem::filesystem_error&) {}
+        } catch (const std::filesystem::filesystem_error& error) {
+            std::cerr << "Error reading PATH files: " << error.what() << std::endl;
+        }
     }
 }
