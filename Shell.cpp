@@ -14,7 +14,7 @@
 
 #include "parser.h"
 
-std::string Shell::colour_code(COLOUR colour) {
+std::string Shell::colour_code(const COLOUR colour) {
     std::string colour_code;
     switch (colour) {
         case RED:
@@ -88,7 +88,7 @@ bool Shell::handle_commands(const std::unique_ptr<char, void(*)(void *)> &curren
     return false;
 }
 
-char *Shell::command_generator(const char *text, int state) {
+char* Shell::command_generator(const char *text, const int state) {
     static std::vector<std::string> matches;
     static size_t match_index;
 

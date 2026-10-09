@@ -32,7 +32,7 @@ class Config {
 
 public:
     static void set_current_directory(const std::string &given_current_directory) {
-        Config::current_directory = given_current_directory;
+        current_directory = given_current_directory;
     }
 
     static std::string get_home_path() {
