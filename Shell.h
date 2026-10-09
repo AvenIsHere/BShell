@@ -28,10 +28,14 @@ class Shell {
 
 public:
 
+    static std::string build_path();
+
     static void execute_command(const std::vector<std::string> &args);
     static bool handle_commands(const std::unique_ptr<char, void(*)(void*)> &currentCMD);
+
     static char* command_generator(const char* text, int state);
     static char** complete(const char* text, int start, int end);
+
     static std::unique_ptr<char, void(*)(void*)> get_input();
 
     static int loop();

@@ -117,17 +117,25 @@ char **Shell::complete(const char *text, int start, int end) {
     return nullptr;
 }
 
-std::unique_ptr<char, void(*)(void *)> Shell::get_input() {
-    std::string prompt;
+std::string Shell::build_path() {
     const std::string home_path = Config::get_home_path();
     std::string current_dir = Config::get_current_directory();
+
     if (!home_path.empty() && current_dir.starts_with(home_path)) {
-        prompt = std::format("{}{}@{}{}:{}~{}{}$ ", colour_code(GREEN), Config::get_username(), Config::get_hostname(), colour_code(DEFAULT), colour_code(GREEN),
-                             current_dir.c_str() + home_path.length(), colour_code(DEFAULT));
-    } else {
-        prompt = std::format("{}{}@{}{}:{}{}{}$ ", colour_code(GREEN), Config::get_username(), Config::get_hostname(), colour_code(DEFAULT), colour_code(GREEN),
-                             current_dir, colour_code(DEFAULT));
+        current_dir = std::format("{}{}", "~", current_dir.substr(home_path.length()));
     }
+
+    return current_dir;
+}
+
+std::unique_ptr<char, void(*)(void *)> Shell::get_input() {
+    const std::string home_path = Config::get_home_path();
+    std::string current_dir = build_path();
+
+    const std::string prompt = std::format("{}{}@{}{}:{}{}{}$ ", colour_code(GREEN), Config::get_username(),
+                                     Config::get_hostname(), colour_code(DEFAULT), colour_code(GREEN),
+                                     current_dir, colour_code(DEFAULT));
+
     std::unique_ptr<char, void(*)(void*)> current_cmd(readline(prompt.c_str()), std::free);
 
     if (current_cmd == nullptr) {
