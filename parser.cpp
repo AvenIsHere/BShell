@@ -23,33 +23,33 @@ Parser::Parser(const std::string& input) {
     this->state = NORMAL;
 }
 
-bool Parser::normal_token(const char token) {
+void Parser::normal_token(const char token) {
     if (token == '\\') {
         state = ESCAPE;
         stack.push(NORMAL);
-        return false;
+        return;
     }
     if (token == '"') {
         state = QUOTE;
         stack.push(NORMAL);
-        return false;
+        return;
     }
     if (token == '$') {
         state = ENV_VAR;
         stack.push(NORMAL);
-        return false;
+        return;
     }
     if (token == ' ') {
         if (!current_token.empty()) {
             current_cmd.push_back(current_token);
             current_token.clear();
         }
-        return false;
+        return;
     }
     if (token == '\'') {
         state = SINGLE_QUOTE;
         stack.push(NORMAL);
-        return false;
+        return;
     }
     if (token == ';' || token == '\n') {
         if (!current_token.empty()) {
@@ -57,60 +57,58 @@ bool Parser::normal_token(const char token) {
             current_token.clear();
         }
         if (!current_cmd.empty()) {
-            return true;
+            parsed_input.push_back(current_cmd);
+            current_cmd.clear();
         }
-        return false;
+        return;
     }
     current_token += token;
-    return false;
 }
 
-bool Parser::quote_token(const char token) {
+void Parser::quote_token(const char token) {
     if (token == '"') {
         state = stack.top();
         stack.pop();
-        return false;
+        return;
     }
     if (token == '\\') {
         state = ESCAPE;
         stack.push(QUOTE);
-        return false;
+        return;
     }
     if (token == '$') {
         state = ENV_VAR;
         stack.push(QUOTE);
-        return false;
+        return;
     }
     current_token += token;
-    return false;
 }
 
-bool Parser::escape_token(const char token) {
+void Parser::escape_token(const char token) {
     if (stack.top() != QUOTE) {
         if (token != '\n') {
             current_token += token;
         }
         state = stack.top();
         stack.pop();
-        return false;
+        return;
     }
     if (token == '$' || token == '`' || token == '"' || token == '\\') {
         current_token += token;
         state = stack.top();
         stack.pop();
-        return false;
+        return;
     }
     current_token += '\\';
     current_token += token;
     state = stack.top();
     stack.pop();
-    return false;
 }
 
-bool Parser::env_var_token(const char token) {
+void Parser::env_var_token(const char token) {
     if (std::isalnum(token) || token == '_') {
         env_str += token;
-        return false;
+        return;
     }
     if (env_str.empty()) {
         current_token.push_back('$');
@@ -121,59 +119,44 @@ bool Parser::env_var_token(const char token) {
     env_str.clear();
     state = stack.top();
     stack.pop();
-    return true;
+    index--;
 }
 
-bool Parser::single_quote_token(const char token) {
+void Parser::single_quote_token(const char token) {
     if (token == '\'') {
         state = stack.top();
         stack.pop();
-        return false;
+        return;
     }
     current_token += token;
-    return false;
 }
 
-std::vector<std::vector<std::string>> Parser::tokenise() {
-    std::vector<std::vector<std::string>> return_vector;
+std::vector<Command> Parser::tokenise() {
+    parsed_input.clear();
     current_token.clear();
     current_cmd.clear();
     env_str.clear();
-    for (int i = 0; i < input.length(); i++) {
-        const char& c = input[i];
+    for (; index < input.length(); index++) {
+        const char& c = input[index];
         switch (state) {
             case NORMAL: {
-                if (normal_token(c)) {
-                    return_vector.push_back(current_cmd);
-                    current_cmd.clear();
-                }
+                normal_token(c);
                 continue;
             }
             case QUOTE: {
-                if (quote_token(c)) {
-                    return_vector.push_back(current_cmd);
-                    current_cmd.clear();
-                }
+                quote_token(c);
                 continue;
             }
             case ESCAPE: {
-                if (escape_token(c)) {
-                    return_vector.push_back(current_cmd);
-                    current_cmd.clear();
-                }
+                escape_token(c);
                 continue;
             }
             case ENV_VAR: {
-                if (env_var_token(c)) {
-                    i--;
-                }
+                env_var_token(c);
                 continue;
             }
             case SINGLE_QUOTE: {
-                if (single_quote_token(c)) {
-                    return_vector.push_back(current_cmd);
-                    current_cmd.clear();
-                }
+                single_quote_token(c);
             }
         }
     }
@@ -189,10 +172,8 @@ std::vector<std::vector<std::string>> Parser::tokenise() {
         current_cmd.push_back(current_token);
     }
     if (!current_cmd.empty()) {
-        return_vector.push_back(current_cmd);
+        parsed_input.push_back(current_cmd);
     }
-    while (!stack.empty()) {
-        stack.pop();
-    }
-    return return_vector;
+    stack = {};
+    return parsed_input;
 }

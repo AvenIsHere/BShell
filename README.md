@@ -9,7 +9,7 @@ A lightweight shell written in C++20 for POSIX-compliant operating systems.
 - GNU Readline integration
   - Full command history support
   - Tab completion
-- Custom-made command parsing
+- Command parsing
   - Supports escape characters
   - Supports quotes, single (`'`) and double (`"`)
   - Supports environment variables
@@ -22,10 +22,11 @@ A lightweight shell written in C++20 for POSIX-compliant operating systems.
 
 ### Compatibility & Issues
 
-This program is known to compile on Linux and macOS; however, it has only been tested on Linux. 
-Windows (& other non-POSIX OS) support is not planned, but PRs are welcomed!
+This program is known to compile on Linux and macOS, but it has only been tested on Linux.
 
-If you run in to any issues when testing, please open an issue with as much detail as possible. 
+Windows (& other non-POSIX OS) support is not planned, but you are welcome to add it yourself and open a PR!
+
+If you run in to any issues when testing, please open an issue with as much detail as possible.
 PRs for issues or new features are also welcomed!
 
 ## Installation
@@ -47,7 +48,7 @@ make
 
 ## Usage
 
-To use the shell, run the following command from the directory you build it in:
+To use the shell, run the following command from the directory you built it in:
 ```shell
 ./BShell
 ```
