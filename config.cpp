@@ -81,10 +81,11 @@ void Config::cd(const std::vector<std::string> &given_command) {
     } else {
         errno = 0;
         std::string dir;
-        if (given_command[1][0] == '~' && home_path.c_str() != nullptr) {
-            dir = std::format("{}{}", home_path, given_command[1].c_str() + 1);
+        const std::string& path = given_command[1];
+        if (path[0] == '~' && !home_path.empty()) {
+            dir = std::format("{}{}", home_path, path.substr(1));
         } else {
-            dir = given_command[1];
+            dir = path;
         }
         if (chdir(dir.c_str()) == -1) {
             perror("cd failed");
@@ -98,8 +99,7 @@ void Config::cd(const std::vector<std::string> &given_command) {
 void Config::export_env(const std::vector<std::string> &given_command) {
     if (given_command.size() < 2) {
         for (char** env = environ; *env != nullptr; env++) {
-            const char* env_i = *env;
-            std::cout << env_i << std::endl;
+            std::cout << *env << std::endl;
         }
     }
     for (int i=1; i < given_command.size(); i++) {
@@ -116,10 +116,6 @@ void Config::build_commands() {
     commands.clear();
     const char* path_env = getenv("PATH");
     if (!path_env) return;
-
-    if (path_env == path_str) {
-        return;
-    }
 
     path_str = path_env;
     std::stringstream ss(path_env);
