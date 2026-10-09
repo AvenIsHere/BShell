@@ -27,6 +27,5 @@
 #endif
 
 int main() {
-    Shell shell;
-    return shell.loop();
+    return Shell::loop();
 }
