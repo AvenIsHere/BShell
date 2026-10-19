@@ -43,15 +43,17 @@ class Parser {
     Command current_cmd;
     std::string env_str;
 
-public:
-    explicit Parser(const std::string& input);
-    std::vector<Command> tokenise();
-
     void normal_token(char token);
     void quote_token(char token);
     void escape_token(char token);
     void env_var_token(char token);
     void single_quote_token(char token);
+
+public:
+
+    explicit Parser(const std::string& input);
+    std::vector<Command> tokenise();
+
 };
 
 

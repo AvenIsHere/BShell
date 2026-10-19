@@ -110,7 +110,7 @@ char* Shell::command_generator(const char *text, const int state) {
     return nullptr;
 }
 
-char **Shell::complete(const char *text, int start, int end) {
+char **Shell::complete(const char *text, const int start, int end) {
     if (start == 0) {
         return rl_completion_matches(text, command_generator);
     }

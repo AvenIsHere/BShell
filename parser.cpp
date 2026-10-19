@@ -132,11 +132,13 @@ void Parser::single_quote_token(const char token) {
 }
 
 std::vector<Command> Parser::tokenise() {
+    stack = {};
+    state = State::NORMAL;
     parsed_input.clear();
     current_token.clear();
     current_cmd.clear();
     env_str.clear();
-    for (; index < input.length(); index++) {
+    for (index = 0; index < input.length(); index++) {
         const char& c = input[index];
         switch (state) {
             case State::NORMAL: {
@@ -174,6 +176,5 @@ std::vector<Command> Parser::tokenise() {
     if (!current_cmd.empty()) {
         parsed_input.push_back(current_cmd);
     }
-    stack = {};
     return parsed_input;
 }
