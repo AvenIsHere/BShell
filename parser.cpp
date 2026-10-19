@@ -20,23 +20,23 @@
 
 Parser::Parser(const std::string& input) {
     this->input = input;
-    this->state = NORMAL;
+    this->state = State::NORMAL;
 }
 
 void Parser::normal_token(const char token) {
     if (token == '\\') {
-        state = ESCAPE;
-        stack.push(NORMAL);
+        state = State::ESCAPE;
+        stack.push(State::NORMAL);
         return;
     }
     if (token == '"') {
-        state = QUOTE;
-        stack.push(NORMAL);
+        state = State::QUOTE;
+        stack.push(State::NORMAL);
         return;
     }
     if (token == '$') {
-        state = ENV_VAR;
-        stack.push(NORMAL);
+        state = State::ENV_VAR;
+        stack.push(State::NORMAL);
         return;
     }
     if (token == ' ') {
@@ -47,8 +47,8 @@ void Parser::normal_token(const char token) {
         return;
     }
     if (token == '\'') {
-        state = SINGLE_QUOTE;
-        stack.push(NORMAL);
+        state = State::SINGLE_QUOTE;
+        stack.push(State::NORMAL);
         return;
     }
     if (token == ';' || token == '\n') {
@@ -72,20 +72,20 @@ void Parser::quote_token(const char token) {
         return;
     }
     if (token == '\\') {
-        state = ESCAPE;
-        stack.push(QUOTE);
+        state = State::ESCAPE;
+        stack.push(State::QUOTE);
         return;
     }
     if (token == '$') {
-        state = ENV_VAR;
-        stack.push(QUOTE);
+        state = State::ENV_VAR;
+        stack.push(State::QUOTE);
         return;
     }
     current_token += token;
 }
 
 void Parser::escape_token(const char token) {
-    if (stack.top() != QUOTE) {
+    if (stack.top() != State::QUOTE) {
         if (token != '\n') {
             current_token += token;
         }
@@ -139,28 +139,28 @@ std::vector<Command> Parser::tokenise() {
     for (; index < input.length(); index++) {
         const char& c = input[index];
         switch (state) {
-            case NORMAL: {
+            case State::NORMAL: {
                 normal_token(c);
                 continue;
             }
-            case QUOTE: {
+            case State::QUOTE: {
                 quote_token(c);
                 continue;
             }
-            case ESCAPE: {
+            case State::ESCAPE: {
                 escape_token(c);
                 continue;
             }
-            case ENV_VAR: {
+            case State::ENV_VAR: {
                 env_var_token(c);
                 continue;
             }
-            case SINGLE_QUOTE: {
+            case State::SINGLE_QUOTE: {
                 single_quote_token(c);
             }
         }
     }
-    if (state == ENV_VAR) {
+    if (state == State::ENV_VAR) {
         if (env_str.empty()) {
             current_token.push_back('$');
         }

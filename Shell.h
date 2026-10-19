@@ -12,7 +12,7 @@
 
 class Shell {
 
-    enum COLOUR {
+    enum class COLOUR {
         RED,
         GREEN,
         BLUE,

@@ -24,7 +24,7 @@ using Command = std::vector<std::string>;
 
 
 class Parser {
-    enum State {
+    enum class State {
         NORMAL,
         QUOTE,
         ESCAPE,

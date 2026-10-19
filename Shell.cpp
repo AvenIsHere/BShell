@@ -17,16 +17,16 @@
 std::string Shell::colour_code(const COLOUR colour) {
     std::string colour_code;
     switch (colour) {
-        case RED:
+        case COLOUR::RED:
             colour_code = "31";
             break;
-        case GREEN:
+        case COLOUR::GREEN:
             colour_code = "32";
             break;
-        case BLUE:
+        case COLOUR::BLUE:
             colour_code = "34";
             break;
-        case DEFAULT:
+        case COLOUR::DEFAULT:
             colour_code = "39";
             break;
     }
@@ -132,9 +132,9 @@ std::unique_ptr<char, void(*)(void *)> Shell::get_input() {
     const std::string home_path = Config::get_home_path();
     std::string current_dir = build_path();
 
-    const std::string prompt = std::format("{}{}@{}{}:{}{}{}$ ", colour_code(GREEN), Config::get_username(),
-                                     Config::get_hostname(), colour_code(DEFAULT), colour_code(GREEN),
-                                     current_dir, colour_code(DEFAULT));
+    const std::string prompt = std::format("{}{}@{}{}:{}{}{}$ ", colour_code(COLOUR::GREEN), Config::get_username(),
+                                     Config::get_hostname(), colour_code(COLOUR::DEFAULT), colour_code(COLOUR::GREEN),
+                                     current_dir, colour_code(COLOUR::DEFAULT));
 
     std::unique_ptr<char, void(*)(void*)> current_cmd(readline(prompt.c_str()), std::free);
 
